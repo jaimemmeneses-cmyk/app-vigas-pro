@@ -1,0 +1,5 @@
+{
+  "name": "Calculadora de Vigas Pro",
+  "description": "An intelligent structural analysis tool for beams, powered by Gemini for configuration assistance and result interpretation.",
+  "requestFramePermissions": []
+}
