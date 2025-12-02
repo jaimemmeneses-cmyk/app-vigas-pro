@@ -167,19 +167,12 @@ export default function App() {
         // Calculate ratio to fit width
         const ratio = pdfWidth / imgWidth;
         const finalHeight = imgHeight * ratio;
-
-        // If height is larger than page, we could slice, but for now we'll just resize to fit width
-        // and let it span pages if we implemented multi-page split (complex).
-        // Simple approach: Fit width, if too long, it scales down or user relies on single page summary.
-        // For better UX on single page reports:
         
         let position = 0;
         // Check if content fits on one page
         if (finalHeight < pdfHeight) {
             pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, finalHeight);
         } else {
-            // Very simple multi-page handling (splitting image strictly by page height)
-            // Note: This might cut text in half. 
             let heightLeft = finalHeight;
             let pageHeight = pdfHeight;
             
@@ -581,6 +574,31 @@ export default function App() {
           </div>
 
         </main>
+
+        {/* --- FOOTER (AQUÍ ESTÁ TU NOMBRE) --- */}
+        <footer className="bg-slate-900 text-slate-300 py-8 mt-12 text-center border-t-4 border-blue-500 no-print">
+          <div className="mb-2 font-bold text-white text-lg">Calculadora de Vigas Pro v1.0</div>
+          <div className="text-sm mb-4">Desarrollado con tecnología React + Google Gemini AI</div>
+          
+          <div className="w-16 h-px bg-slate-700 mx-auto my-4"></div>
+          
+          <div className="text-sm">
+            Creado por{' '}
+            <a 
+              href="https://www.linkedin.com/in/jaime-m-meneses/" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="text-blue-400 hover:text-blue-300 font-bold transition-colors ml-1"
+            >
+              Jaime M. Meneses
+            </a>
+          </div>
+          
+          <div className="text-xs text-slate-500 mt-4">
+            © {new Date().getFullYear()} Todos los derechos reservados.
+          </div>
+        </footer>
+
       </div>
 
       {/* --- Right Sidebar: Gemini Assistant (Hidden on Print) --- */}
