@@ -54,15 +54,17 @@ export class GeminiService {
   private ai: GoogleGenAI;
 
  constructor() {
-    // ESTO ES LA FORMA SEGURA:
-    // Le decimos al código: "Busca la variable de entorno".
-    // Si no la encuentra, fallará, pero NO escribimos la clave aquí.
+    // 1. Intentamos leer la clave del archivo .env.local
     const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
 
+    // 2. Verificación en consola (para que sepas si la leyó)
     if (!apiKey) {
-      console.error("Falta la API KEY en el archivo .env.local");
+      console.error("❌ ERROR CRÍTICO: No se encontró VITE_GOOGLE_API_KEY. Revisa tu archivo .env.local");
+    } else {
+      console.log("✅ API Key detectada correctamente.");
     }
 
+    // 3. Inicializamos Gemini
     this.ai = new GoogleGenAI({ apiKey: apiKey || "" });
   }
 
