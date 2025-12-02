@@ -53,13 +53,15 @@ const updateBeamTool: FunctionDeclaration = {
 export class GeminiService {
   private ai: GoogleGenAI;
 
-  constructor() {
-    let apiKey = '';
-    if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
-      apiKey = process.env.API_KEY;
-    } else {
-      console.error("API_KEY is missing from environment variables.");
+ constructor() {
+    // Intenta leer la clave del archivo .env (formato Vite)
+    // O usa tu clave "quemada" directamente como respaldo
+    const apiKey = import.meta.env.VITE_GOOGLE_API_KEY || "AIzaSyAR6YhGR6ozEPaKiK3aHbK83SD54VVxZDI";
+
+    if (!apiKey) {
+      console.error("¡Falta la API KEY! Revisa geminiService.ts o tu archivo .env");
     }
+
     this.ai = new GoogleGenAI({ apiKey });
   }
 
