@@ -3,8 +3,8 @@ import { BeamCalculator } from './utils/beamLogic';
 import { BeamVisualizer } from './components/BeamVisualizer';
 import { ResultsCharts } from './components/ResultsCharts';
 import { GeminiAssistant } from './components/GeminiAssistant';
-import { AppState, SupportType, LoadType, LengthUnit, ForceUnit } from './types';
-import { Plus, Trash2, Play, Settings, Bot, X, FileDown, Printer, Image, ArrowDown, ArrowUp, RotateCcw, RotateCw, Info, Loader2 } from 'lucide-react';
+import { AppState, LoadType } from './types';
+import { Plus, Trash2, Play, Settings, Bot, X, Printer, Image, ArrowDown, ArrowUp, RotateCcw, RotateCw, Info, Loader2 } from 'lucide-react';
 import clsx from 'clsx';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
@@ -31,7 +31,23 @@ const initialState: AppState = {
 };
 
 export default function App() {
-  const [state, setState] = useState<AppState>(initialState);
+  // 1. ESTADO CON MEMORIA (Auto-Guardado)
+  const [state, setState] = useState<AppState>(() => {
+    const savedData = localStorage.getItem('beam_app_pro_v1');
+    if (savedData) {
+      try { return JSON.parse(savedData); } catch (e) { console.error(e); }
+    }
+    return initialState;
+  });
+
+  // 2. EFECTO PARA GUARDAR
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      localStorage.setItem('beam_app_pro_v1', JSON.stringify(state));
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [state]);
+
   const [useFEM, setUseFEM] = useState(false);
   const [showAssistant, setShowAssistant] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -45,6 +61,15 @@ export default function App() {
   const uD = `${uF}/${uL}`;
 
   // --- Actions ---
+  
+  const handleReset = () => {
+    if (window.confirm('¿Quieres borrar todo y empezar un ejercicio nuevo?')) {
+      setState(initialState);
+      localStorage.removeItem('beam_app_pro_v1');
+      window.location.reload();
+    }
+  };
+
   const updateUnit = (key: 'length' | 'force', val: string) => {
       setState(prev => ({
           ...prev,
@@ -129,7 +154,6 @@ export default function App() {
   const handleGeminiUpdate = (newConfig: Partial<AppState>) => {
       setState(prev => {
           const next = { ...prev, ...newConfig };
-          // Preserve section properties if not provided
           if(newConfig.beam && !newConfig.beam.section) {
               next.beam.section = prev.beam.section;
           }
@@ -139,58 +163,40 @@ export default function App() {
 
   const handleExportPDF = async () => {
     if (!reportRef.current || isGeneratingPdf) return;
-    
     setIsGeneratingPdf(true);
-    
-    // Give UI a moment to update
     await new Promise(resolve => setTimeout(resolve, 100));
 
     try {
-        const canvas = await html2canvas(reportRef.current, {
-           scale: 2, // Higher quality
-           useCORS: true,
-           backgroundColor: '#ffffff'
-        });
-
+        const canvas = await html2canvas(reportRef.current, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
         const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF({
-           orientation: 'p',
-           unit: 'mm',
-           format: 'a4'
-        });
+        const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
 
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfHeight = pdf.internal.pageSize.getHeight();
         const imgWidth = canvas.width;
         const imgHeight = canvas.height;
-        
-        // Calculate ratio to fit width
         const ratio = pdfWidth / imgWidth;
         const finalHeight = imgHeight * ratio;
         
         let position = 0;
-        // Check if content fits on one page
         if (finalHeight < pdfHeight) {
             pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, finalHeight);
         } else {
             let heightLeft = finalHeight;
             let pageHeight = pdfHeight;
-            
             pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, finalHeight);
             heightLeft -= pageHeight;
-            
             while (heightLeft > 0) {
-              position = heightLeft - finalHeight; // Move image up
+              position = heightLeft - finalHeight;
               pdf.addPage();
               pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, finalHeight);
               heightLeft -= pageHeight;
             }
         }
-        
         pdf.save(`reporte-analisis-${Date.now()}.pdf`);
     } catch (e) {
         console.error("PDF Export Error", e);
-        alert("Hubo un error al generar el PDF. Por favor intenta de nuevo.");
+        alert("Hubo un error al generar el PDF.");
     } finally {
         setIsGeneratingPdf(false);
     }
@@ -199,11 +205,7 @@ export default function App() {
   const handleExportPNG = async () => {
     if (reportRef.current) {
       try {
-        const canvas = await html2canvas(reportRef.current, {
-           scale: 2,
-           useCORS: true,
-           backgroundColor: '#ffffff'
-        });
+        const canvas = await html2canvas(reportRef.current, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
         const link = document.createElement('a');
         link.download = `analisis-viga-${Date.now()}.png`;
         link.href = canvas.toDataURL('image/png');
@@ -224,6 +226,14 @@ export default function App() {
         {/* Header */}
         <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between sticky top-0 z-10 shadow-sm no-print">
           <div className="flex items-center gap-3">
+             <button 
+               onClick={handleReset}
+               className="bg-gray-100 hover:bg-gray-200 text-gray-600 p-2 rounded-lg transition-colors border border-gray-200"
+               title="Reiniciar ejercicio (Borrar memoria)"
+             >
+                <RotateCcw className="w-5 h-5" />
+             </button>
+
              <div className="bg-blue-600 text-white p-2 rounded-lg">
                 <Settings className="w-5 h-5" />
              </div>
@@ -269,7 +279,7 @@ export default function App() {
 
         <main className="p-6 max-w-7xl mx-auto w-full grid grid-cols-1 xl:grid-cols-3 gap-6 print:block">
           
-          {/* --- Left Column: Configuration (Hidden on Print) --- */}
+          {/* --- Left Column: Configuration --- */}
           <div className="xl:col-span-1 space-y-6 no-print">
             
             {/* Unit Configuration */}
@@ -433,7 +443,6 @@ export default function App() {
           </div>
 
           {/* --- Center/Right: Results --- */}
-          {/* Removed print:absolute to fix multi-page printing in native print dialog, and enable reliable html2canvas capture */}
           <div ref={reportRef} className="xl:col-span-2 space-y-6 print:col-span-3 print:w-full print:block bg-white p-2 md:p-0">
              
              {/* SIGN CONVENTION SECTION */}
@@ -575,7 +584,7 @@ export default function App() {
 
         </main>
 
-        {/* --- FOOTER (AQUÍ ESTÁ TU NOMBRE) --- */}
+        {/* --- FOOTER --- */}
         <footer className="bg-slate-900 text-slate-300 py-8 mt-12 text-center border-t-4 border-blue-500 no-print">
           <div className="mb-2 font-bold text-white text-lg">Calculadora de Vigas Pro v1.0</div>
           <div className="text-sm mb-4">Desarrollado con tecnología React + Google Gemini AI</div>
@@ -601,7 +610,7 @@ export default function App() {
 
       </div>
 
-      {/* --- Right Sidebar: Gemini Assistant (Hidden on Print) --- */}
+      {/* --- Right Sidebar: Gemini Assistant --- */}
       {showAssistant && (
           <div className="no-print">
             <GeminiAssistant beamState={state} onUpdateBeam={handleGeminiUpdate} />
