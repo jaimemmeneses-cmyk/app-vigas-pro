@@ -81,15 +81,22 @@ export default function App() {
     setState((prev) => ({ ...prev, beam: { ...prev.beam, [key]: val } }));
   };
 
-  const addSupport = () => {
-    setState((prev) => ({
-      ...prev,
-      supports: [
-        ...prev.supports,
-        { id: `S${Date.now()}`, x: prev.beam.length / 2, type: 'pinned' },
-      ],
-    }));
-  };
+    const addSupport = () => {
+        // --- RESTRICCIÓN GRATUITA ---
+        if (state.supports.length >= 2) {
+            alert("🔒 LÍMITE DE LA VERSIÓN GRATUITA\n\nSolo se permiten 2 apoyos (Vigas Isostáticas Simples).\n\nPara calcular vigas continuas (3+ apoyos), adquiere la Versión PRO.");
+            return;
+        }
+        // ----------------------------
+
+        setState((prev) => ({
+            ...prev,
+            supports: [
+                ...prev.supports,
+                { id: `S${Date.now()}`, x: prev.beam.length / 2, type: 'pinned' },
+            ],
+        }));
+    };
 
   const updateSupport = (id: string, key: string, val: any) => {
     setState((prev) => ({
@@ -107,23 +114,35 @@ export default function App() {
     }));
   };
 
-  const addLoad = (type: LoadType) => {
-    setState((prev) => ({
-      ...prev,
-      loads: [
-        ...prev.loads,
-        {
-          id: `L${Date.now()}`,
-          type,
-          magnitude: -10,
-          w: -5,
-          x: prev.beam.length / 2,
-          x_start: 0,
-          x_end: 2,
-        },
-      ],
-    }));
-  };
+    const addLoad = (type: LoadType) => {
+        // --- RESTRICCIÓN GRATUITA ---
+        if (type !== 'point') {
+            alert("🔒 CARACTERÍSTICA PRO\n\nLas Cargas Distribuidas y Momentos solo están disponibles en la versión VIP.\n\nEn esta versión gratuita solo puedes usar Cargas Puntuales.");
+            return;
+        }
+
+        if (state.loads.length >= 2) {
+            alert("🔒 LÍMITE ALCANZADO\n\nLa versión gratuita permite máximo 2 cargas.\n\nPara agregar cargas ilimitadas, adquiere la versión PRO.");
+            return;
+        }
+        // ----------------------------
+
+        setState((prev) => ({
+            ...prev,
+            loads: [
+                ...prev.loads,
+                {
+                    id: `L${Date.now()}`,
+                    type,
+                    magnitude: -10,
+                    w: -5,
+                    x: prev.beam.length / 2,
+                    x_start: 0,
+                    x_end: 2,
+                },
+            ],
+        }));
+    };
 
   const updateLoad = (id: string, key: string, val: any) => {
     setState((prev) => ({
@@ -161,61 +180,27 @@ export default function App() {
       });
   };
 
-  const handleExportPDF = async () => {
-    if (!reportRef.current || isGeneratingPdf) return;
-    setIsGeneratingPdf(true);
-    await new Promise(resolve => setTimeout(resolve, 100));
+    const handleExportPDF = async () => {
+        // --- BLOQUEO PRO ---
+        alert("🔒 EXPORTACIÓN BLOQUEADA\n\nGenerar reportes PDF profesionales es una función exclusiva de la Versión PRO.");
+        return;
+        // -------------------
 
-    try {
-        const canvas = await html2canvas(reportRef.current, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+        // (El código original sigue abajo, pero nunca se ejecutará)
+        if (!reportRef.current || isGeneratingPdf) return;
+        // ...
+    };
 
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = pdf.internal.pageSize.getHeight();
-        const imgWidth = canvas.width;
-        const imgHeight = canvas.height;
-        const ratio = pdfWidth / imgWidth;
-        const finalHeight = imgHeight * ratio;
-        
-        let position = 0;
-        if (finalHeight < pdfHeight) {
-            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, finalHeight);
-        } else {
-            let heightLeft = finalHeight;
-            let pageHeight = pdfHeight;
-            pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, finalHeight);
-            heightLeft -= pageHeight;
-            while (heightLeft > 0) {
-              position = heightLeft - finalHeight;
-              pdf.addPage();
-              pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, finalHeight);
-              heightLeft -= pageHeight;
-            }
+    const handleExportPNG = async () => {
+        // --- BLOQUEO PRO ---
+        alert("🔒 EXPORTACIÓN BLOQUEADA\n\nLa descarga de imágenes HD está reservada para usuarios PRO.");
+        return;
+        // -------------------
+
+        if (reportRef.current) {
+            // ...
         }
-        pdf.save(`reporte-analisis-${Date.now()}.pdf`);
-    } catch (e) {
-        console.error("PDF Export Error", e);
-        alert("Hubo un error al generar el PDF.");
-    } finally {
-        setIsGeneratingPdf(false);
-    }
-  };
-
-  const handleExportPNG = async () => {
-    if (reportRef.current) {
-      try {
-        const canvas = await html2canvas(reportRef.current, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
-        const link = document.createElement('a');
-        link.download = `analisis-viga-${Date.now()}.png`;
-        link.href = canvas.toDataURL('image/png');
-        link.click();
-      } catch (e) {
-        console.error("Export failed", e);
-        alert("Error al exportar la imagen.");
-      }
-    }
-  };
+    };
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row text-slate-800 font-sans relative">
@@ -366,8 +351,7 @@ export default function App() {
                             className="bg-white border border-gray-300 text-sm rounded px-2 py-1 focus:ring-2 focus:ring-blue-200 outline-none"
                           >
                              <option value="pinned">Articulado</option>
-                             <option value="roller">Rodillo</option>
-                             <option value="fixed">Empotrado</option>
+                             <option value="roller">Rodillo</option> 
                           </select>
                           <div className="flex items-center gap-1 flex-1">
                               <span className="text-xs text-gray-500">en</span>
