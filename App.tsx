@@ -50,9 +50,7 @@ const printStyles = `
 // 👆 -----------------------------------------------------------
 
 const initialState: AppState = {
-  // ...
-const initialState: AppState = {
-  meta: { units: { length: 'm', force: 'kN' } },
+    meta: { units: { length: 'm', force: 'kN' } },
   beam: { length: 10.0, section: { I: 8.5e-5, E: 210000.0 } },
   supports: [
     { id: 'S1', x: 0.0, type: 'pinned' },
