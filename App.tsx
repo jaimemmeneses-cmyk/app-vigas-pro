@@ -9,6 +9,48 @@ import clsx from 'clsx';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 
+// 👇 --- PEGA ESTO AQUÍ (Entre los imports y el initialState) ---
+const printStyles = `
+  @media print {
+    body { 
+      margin: 0; 
+      padding: 0; 
+      overflow: hidden; 
+    }
+    /* Ocultar todo el contenido de la app */
+    #root, .min-h-screen {
+      display: none !important;
+      opacity: 0 !important;
+    }
+    
+    /* Mostrar el mensaje de bloqueo */
+    body:before {
+      content: "🔒 VISTA PREVIA BLOQUEADA";
+      display: flex !important;
+      justify-content: center;
+      align-items: center;
+      height: 50vh;
+      font-size: 40px;
+      font-weight: bold;
+      color: #dc2626 !important;
+      text-align: center;
+      width: 100%;
+    }
+    
+    body:after {
+      content: "La impresión está deshabilitada en la versión gratuita. Adquiere la Versión PRO para obtener reportes profesionales.";
+      display: block !important;
+      font-size: 20px;
+      text-align: center;
+      color: #333;
+      margin-top: 20px;
+    }
+  }
+`;
+// 👆 -----------------------------------------------------------
+
+const initialState: AppState = {
+  // ...
 const initialState: AppState = {
   meta: { units: { length: 'm', force: 'kN' } },
   beam: { length: 10.0, section: { I: 8.5e-5, E: 210000.0 } },
@@ -203,7 +245,8 @@ export default function App() {
     };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row text-slate-800 font-sans relative">
+      <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row text-slate-800 font-sans relative">
+          <style>{printStyles}</style>
       
       {/* --- Main Content Area --- */}
       <div className={clsx("flex-1 flex flex-col transition-all duration-300 print:w-full", showAssistant ? "mr-0 md:mr-80 lg:mr-96" : "")}>
